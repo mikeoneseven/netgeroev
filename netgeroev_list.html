@@ -5242,9 +5242,7 @@ function setWsStatus(text, type = "") {
  * Так стабильнее на мобильных, в OBS не копятся клиенты.
  */
 async function sendObsMessage(message) {
-    if (sendingLock) {
-        return false;
-    }
+    if (sendingLock) return false;
 
     const url = document.getElementById("wsUrl").value.trim();
     const password = document.getElementById("wsPassword").value;
@@ -5255,44 +5253,64 @@ async function sendObsMessage(message) {
     }
 
     sendingLock = true;
-
     let socket = null;
+    let stage = "создание подключения";
+
+    const withTimeout = (promise, ms, label) =>
+        Promise.race([
+            promise,
+            new Promise((_, reject) =>
+                setTimeout(
+                    () => reject(new Error("Тайм-аут: " + label)),
+                    ms
+                )
+            )
+        ]);
 
     try {
-        setWsStatus("Отправляю " + message + "…");
-
+        setWsStatus("Подключаюсь к OBS…");
         socket = new OBSWebSocket();
-        await socket.connect(url, password || undefined);
 
-        await socket.call("CallVendorRequest", {
-            vendorName: "AdvancedSceneSwitcher",
-            requestType: "AdvancedSceneSwitcherMessage",
-            requestData: {
-                message: message
-            }
-        });
+        stage = "подключение к OBS";
+        await withTimeout(
+            socket.connect(url, password || undefined),
+            10000,
+            stage
+        );
+
+        setWsStatus("Подключено. Отправляю " + message + "…");
+
+        stage = "вызов Advanced Scene Switcher";
+        await withTimeout(
+            socket.call("CallVendorRequest", {
+                vendorName: "AdvancedSceneSwitcher",
+                requestType: "AdvancedSceneSwitcherMessage",
+                requestData: { message: message }
+            }),
+            10000,
+            stage
+        );
 
         setWsStatus(message + " отправлен ✓", "ok");
         return true;
 
     } catch (err) {
-        console.error("Ошибка отправки в OBS:", err);
-        setWsStatus("Ошибка: " + (err.message || err), "err");
+        console.error("Ошибка отправки в OBS:", stage, err);
+        setWsStatus("Ошибка (" + stage + "): " +
+            (err.message || err), "err");
         return false;
 
     } finally {
         if (socket) {
             try {
-                await socket.disconnect();
+                await Promise.race([
+                    socket.disconnect(),
+                    new Promise(resolve => setTimeout(resolve, 1500))
+                ]);
             } catch (e) {}
         }
-        sendingLock = false;
 
-        setTimeout(() => {
-            if (!sendingLock) {
-                setWsStatus("Сигнал уходит при каждом броске");
-            }
-        }, 2000);
+        sendingLock = false;
     }
 }
 
