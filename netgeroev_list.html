@@ -1,0 +1,5550 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>NRI — Лист персонажа</title>
+
+<!-- Библиотека obs-websocket-js (глобальная сборка) -->
+<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.6/dist/obs-ws.global.js"></script>
+
+<style>
+
+/* =========================================================
+   ОСНОВНЫЕ ПЕРЕМЕННЫЕ
+   ========================================================= */
+
+:root {
+    --bg: #111;
+    --panel: #191919;
+    --panel-hover: #222;
+    --line: #303030;
+    --text: #eee;
+    --muted: #777;
+
+    --success: #8eaa91;
+    --catastrophe: #aa7777;
+}
+
+
+/* =========================================================
+   ОСНОВА
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    display: flex;
+    justify-content: center;
+
+    padding: 12px 14px;
+}
+
+.sheet {
+    width: 100%;
+    max-width: 620px;
+}
+
+
+/* =========================================================
+   ИМЯ
+   ========================================================= */
+
+.top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 6px;
+}
+
+.name {
+    flex: 1;
+    min-width: 0;
+
+    background: transparent;
+
+    border: 0;
+
+    color: var(--text);
+
+    font-size: 18px;
+    font-weight: 600;
+
+    padding: 2px 0 2px;
+
+    outline: none;
+}
+
+.name:read-only {
+    cursor: default;
+}
+
+.top-actions {
+    display: flex;
+
+    gap: 5px;
+
+    flex-shrink: 0;
+
+    align-items: center;
+}
+
+
+/* =========================================================
+   БЛОКИ
+   ========================================================= */
+
+section {
+    margin-bottom: 6px;
+}
+
+.section-divider {
+    height: 1px;
+
+    background: var(--line);
+
+    margin:
+        0 0 0;
+}
+
+
+/* =========================================================
+   СТРОКИ
+   ========================================================= */
+
+.row {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    min-height: 33px;
+}
+
+.row.wrap-row {
+    align-items: flex-start;
+
+    padding:
+        2px 0 3px;
+
+    border-bottom:
+        1px solid #1c1c1c;
+}
+
+.row input[type="text"],
+.row textarea {
+    flex: 1;
+    min-width: 0;
+
+    background: transparent;
+
+    border: 0;
+
+    color: var(--text);
+
+    outline: none;
+
+    padding:
+        2px 2px;
+
+    font: inherit;
+
+    resize: none;
+
+    overflow: hidden;
+
+    line-height: 1.3;
+}
+
+
+/* =========================================================
+   КНОПКИ
+   ========================================================= */
+
+button,
+select,
+input {
+    font: inherit;
+}
+
+button {
+    color: var(--text);
+
+    background:
+        var(--panel);
+
+    border:
+        1px solid var(--line);
+
+    border-radius: 7px;
+
+    padding:
+        5px 9px;
+
+    cursor: pointer;
+}
+
+button:hover {
+    background:
+        var(--panel-hover);
+}
+
+.small-btn {
+    color: var(--muted);
+
+    background: transparent;
+
+    border: 0;
+
+    padding:
+        1px 5px;
+
+    font-size: 18px;
+}
+
+.small-btn:hover {
+    color: #aaa;
+
+    background: transparent;
+}
+
+
+/* =========================================================
+   РЕДАКТИРОВАНИЕ
+   ========================================================= */
+
+.edit-btn.active {
+    background: #333;
+
+    border-color: #777;
+
+    color: #fff;
+}
+
+
+/* =========================================================
+   SELECT
+   ========================================================= */
+
+select {
+    background:
+        var(--panel);
+
+    color: var(--text);
+
+    border:
+        1px solid var(--line);
+
+    border-radius: 5px;
+
+    padding:
+        3px 6px;
+}
+
+select:disabled {
+    opacity: .65;
+
+    cursor: default;
+}
+
+
+/* =========================================================
+   АСПЕКТЫ
+   ========================================================= */
+
+.aspect-input {
+    font-size: 16px;
+}
+
+.aspect-input:read-only {
+    cursor: default;
+}
+
+.aspect-infinity {
+    width: 24px;
+
+    flex-shrink: 0;
+
+    text-align: center;
+
+    color: var(--text);
+
+    font-size: 16px;
+
+    line-height: 1.35;
+
+    padding-top: 4px;
+
+    user-select: none;
+
+    -webkit-user-select: none;
+
+    pointer-events: none;
+}
+
+/* =========================================================
+   ОБСТОЯТЕЛЬСТВА
+   ========================================================= */
+
+.circumstance-row {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 7px;
+
+    min-height: 28px;
+
+    padding:
+        2px 0 3px;
+
+    border-bottom:
+        1px solid #1c1c1c;
+}
+
+.circumstance-input {
+    flex: 0 1 auto;
+
+    width: auto;
+
+    min-width: 6em;
+
+    max-width: calc(100% - 70px);
+
+    background: transparent;
+
+    border: 0;
+
+    color: var(--text);
+
+    outline: none;
+
+    padding:
+        4px 2px;
+
+    font-size: 16px;
+
+    font: inherit;
+
+    resize: none;
+
+    overflow: hidden;
+
+    line-height: 1.35;
+}
+
+.circumstance-input.used-up {
+    text-decoration: line-through;
+
+    color: #777;
+}
+
+.circumstance-checks {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding-top: 4px;
+
+    flex-shrink: 0;
+}
+
+.circumstance-checks input {
+    width: 15px;
+    height: 15px;
+
+    accent-color: #aaa;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   КНОПКИ ДОБАВЛЕНИЯ
+   ========================================================= */
+
+.add-btn {
+    color: var(--muted);
+
+    background: transparent;
+
+    border: 0;
+
+    padding:
+        2px 0;
+
+    margin-top: 0;
+}
+
+.add-btn:hover {
+    color: var(--text);
+
+    background: transparent;
+}
+
+.state-add-actions {
+    display: flex;
+
+    gap: 18px;
+}
+
+
+/* =========================================================
+   СИМВОЛЫ
+   ========================================================= */
+
+.symbol-name {
+    font-size: 16px;
+}
+
+.symbol-name:read-only {
+    cursor: default;
+}
+
+.roll-buttons {
+    display: flex;
+
+    gap: 4px;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+}
+
+.roll-btn {
+    min-width: 50px;
+
+    padding:
+        4px 8px;
+
+    text-align: center;
+}
+
+.roll-btn.main {
+    font-size: 15px;
+}
+
+.symbol-display {
+    flex-shrink: 0;
+
+    min-width: 24px;
+
+    color: #aaa;
+
+    font-size: 15px;
+
+    line-height: 1;
+
+    text-align: center;
+}
+
+/* =========================================================
+   СОСТОЯНИЯ
+   ========================================================= */
+
+.state-row {
+    gap: 7px;
+
+    border-radius: 5px;
+
+    padding: 2px 4px;
+
+    margin: 0 -4px;
+}
+
+.state-row.marked {
+    background: rgba(90, 18, 18, 0.28);
+}
+
+.state-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+
+    accent-color: #aaa;
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+}
+
+/*
+   Поле текста не растягивается на всю строку —
+   меньше случайных фокусов и клавиатуры на телефоне.
+*/
+.state-text {
+    flex: 0 1 auto;
+
+    width: auto;
+
+    min-width: 4.5em;
+
+    max-width: calc(100% - 48px);
+
+    background: transparent;
+
+    border: 0;
+
+    color: var(--text);
+
+    -webkit-text-fill-color: var(--text);
+
+    outline: none;
+
+    padding:
+        4px 2px;
+
+    font-size: 16px;
+}
+
+.row-spacer {
+    flex: 1;
+
+    min-width: 8px;
+
+    align-self: stretch;
+}
+
+/*
+   Отмеченный стресс / последствие —
+   красный текст + фон строки.
+*/
+.state-text.marked {
+    color: #f0a0a0 !important;
+
+    -webkit-text-fill-color: #f0a0a0 !important;
+}
+
+.state-text.marked::placeholder {
+    color: #e08888 !important;
+
+    -webkit-text-fill-color: #e08888 !important;
+
+    opacity: 1;
+}
+
+/* =========================================================
+   РЕСУРС
+   ========================================================= */
+
+.resource-section {
+    margin-bottom: 4px;
+}
+
+.resource-row {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    min-height: 33px;
+}
+
+.resource-name {
+    flex: 1;
+
+    min-width: 0;
+
+    background: transparent;
+
+    border: 0;
+
+    color: var(--text);
+
+    font-size: 16px;
+
+    outline: none;
+
+    padding:
+        4px 2px;
+}
+
+.resource-name:read-only {
+    cursor: default;
+}
+
+.resource-button {
+    /*
+       Те же размеры, что у .roll-btn,
+       чтобы ряд ресурса совпадал с рядом символов.
+    */
+
+    min-width: 50px;
+
+    padding:
+        4px 8px;
+
+    text-align: center;
+
+    color: #e8d5a3;
+
+    background: #2a2618;
+
+    border: 1px solid #6a5a3a;
+}
+
+.resource-button:hover {
+    background: #3a3420;
+
+    border-color: #8a7a4a;
+}
+
+.resource-count {
+    min-width: 50px;
+
+    padding:
+        4px 8px;
+
+    text-align: center;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: #e8d5a3;
+
+    line-height: 1.2;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.tricks-inline {
+    display: inline-flex;
+
+    flex-wrap: wrap;
+
+    gap: 4px;
+
+    align-items: center;
+}
+
+.trick-btn {
+    min-width: 50px;
+
+    padding: 4px 8px;
+
+    text-align: center;
+
+    font-size: 16px;
+
+    line-height: 1.2;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 4px;
+}
+
+.trick-btn-cost {
+    /* Тот же «кирпичный» тон, что у отмеченного стресса */
+    color: #f0a0a0;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    line-height: 1;
+}
+
+.trick-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(0, 0, 0, .78);
+
+    z-index: 25;
+}
+
+.trick-overlay.visible {
+    display: flex;
+}
+
+.trick-box {
+    width: min(90vw, 360px);
+
+    background: #181818;
+
+    border: 1px solid #333;
+
+    border-radius: 12px;
+
+    padding: 20px 18px 16px;
+}
+
+.trick-view-header {
+    font-size: 18px;
+
+    font-weight: 600;
+
+    margin-bottom: 10px;
+
+    line-height: 1.3;
+}
+
+.trick-view-cost {
+    color: #e8d5a3;
+
+    font-weight: 400;
+}
+
+.trick-view-desc {
+    color: #bbb;
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+    margin-bottom: 14px;
+
+    white-space: pre-wrap;
+}
+
+.trick-edit-label {
+    color: #777;
+
+    font-size: 12px;
+
+    margin: 8px 0 4px;
+}
+
+.trick-edit-label:first-child {
+    margin-top: 0;
+}
+
+.trick-edit-input,
+.trick-edit-area {
+    width: 100%;
+
+    background: #202020;
+
+    border: 1px solid var(--line);
+
+    border-radius: 6px;
+
+    color: var(--text);
+
+    padding: 8px 10px;
+
+    outline: none;
+
+    font: inherit;
+}
+
+.trick-edit-area {
+    min-height: 80px;
+
+    resize: vertical;
+}
+
+.trick-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 14px;
+}
+
+.trick-actions button {
+    flex: 1;
+
+    min-width: 90px;
+
+    min-height: 36px;
+
+    line-height: 1.25;
+}
+
+#trickApplyBtn {
+    min-height: 48px;
+}
+
+.trick-actions .danger {
+    color: #c88;
+
+    border-color: #533;
+}
+
+.trick-hint {
+    color: #666;
+
+    font-size: 12px;
+
+    margin-top: 8px;
+}
+
+
+/* =========================================================
+   НИЖНЯЯ ПАНЕЛЬ
+   ========================================================= */
+
+.bottom {
+    margin-top: 10px;
+
+    padding-top: 6px;
+
+    border-top:
+        1px solid #222;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 6px;
+}
+
+.bottom-actions {
+    display: flex;
+
+    gap: 5px;
+
+    flex-wrap: wrap;
+
+    justify-content: flex-start;
+
+    align-items: center;
+}
+
+.bottom-actions-divider {
+    width: 100%;
+
+    height: 1px;
+
+    background: var(--line);
+
+    margin: 2px 0;
+}
+
+/* Негативная кнопка — тон как у отмеченного стресса */
+.danger-btn {
+    color: #f0a0a0;
+
+    background: rgba(90, 18, 18, 0.35);
+
+    border-color: rgba(160, 60, 60, 0.55);
+}
+
+.danger-btn:hover {
+    color: #ffb0b0;
+
+    background: rgba(110, 28, 28, 0.5);
+
+    border-color: rgba(180, 80, 80, 0.7);
+}
+
+.bottom-actions a.button-link {
+    color: var(--text);
+
+    background: var(--panel);
+
+    border: 1px solid var(--line);
+
+    border-radius: 7px;
+
+    padding: 5px 9px;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    font: inherit;
+
+    display: inline-flex;
+
+    align-items: center;
+}
+
+.bottom-actions a.button-link:hover {
+    background: var(--panel-hover);
+}
+
+.status {
+    color: #666;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+}
+
+.roll-log-section {
+    width: 100%;
+
+    margin-top: 2px;
+
+    padding-top: 6px;
+
+    border-top: 1px solid #222;
+
+    display: none;
+}
+
+.roll-log-section.visible {
+    display: block;
+}
+
+.roll-log {
+    color: #888;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+}
+
+.roll-log-entry {
+    padding: 2px 0;
+
+    border-bottom: 1px solid #1a1a1a;
+}
+
+.roll-log-entry:last-child {
+    border-bottom: 0;
+}
+
+/* =========================================================
+   ГАЛЕРЕЯ
+   ========================================================= */
+
+.gallery {
+    margin: 8px 0 4px;
+
+    width: 100%;
+
+    position: relative;
+
+    cursor: pointer;
+
+    user-select: none;
+
+    -webkit-user-select: none;
+}
+
+.gallery-img {
+    display: block;
+
+    width: 100%;
+
+    height: auto;
+
+    border-radius: 0;
+
+    vertical-align: top;
+}
+
+.gallery-hint {
+    position: absolute;
+
+    bottom: 6px;
+
+    right: 8px;
+
+    color: rgba(255, 255, 255, 0.55);
+
+    font-size: 11px;
+
+    pointer-events: none;
+
+    text-shadow: 0 1px 2px #000;
+}
+
+.roll-log-section {
+    width: 100%;
+
+    margin-top: 8px;
+
+    padding-top: 8px;
+
+    border-top: 1px solid #222;
+}
+
+.roll-log-title {
+    color: #666;
+
+    font-size: 12px;
+
+    margin-bottom: 6px;
+}
+
+.roll-log {
+    color: #888;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+}
+
+.roll-log-entry {
+    padding: 2px 0;
+
+    border-bottom: 1px solid #1a1a1a;
+}
+
+.roll-log-entry:last-child {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   ВСПЛЫВАЮЩЕЕ ОКНО
+   ========================================================= */
+
+.result {
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    background:
+        rgba(0, 0, 0, .78);
+
+    z-index: 10;
+}
+
+.result.visible {
+    display: flex;
+}
+
+.result-box {
+    width:
+        min(90vw, 440px);
+
+    min-height: 230px;
+
+    text-align: center;
+
+    background:
+        #181818;
+
+    border:
+        1px solid #333;
+
+    border-radius: 12px;
+
+    padding:
+        28px 24px 22px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+}
+
+
+/* =========================================================
+   ТОЧКИ ВО ВРЕМЯ БРОСКА
+   ========================================================= */
+
+.roll-dots {
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #aaa;
+
+    font-size: 34px;
+
+    letter-spacing: 3px;
+
+    font-weight: 400;
+}
+
+
+/* =========================================================
+   РЕЗУЛЬТАТ
+   ========================================================= */
+
+.result-type {
+    min-height: 58px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #eee;
+
+    font-size: 42px;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    opacity: 0;
+
+    transform:
+        scale(.94);
+
+    transition:
+        opacity .25s ease,
+        transform .25s ease;
+}
+
+.result-type.visible {
+    opacity: 1;
+
+    transform:
+        scale(1);
+}
+
+
+/*
+   Сдержанные цвета результата.
+*/
+
+.result-type.success {
+    color: var(--success);
+}
+
+.result-type.catastrophe {
+    color: var(--catastrophe);
+}
+
+
+/* =========================================================
+   ОПИСАНИЕ БРОСКА
+   ========================================================= */
+
+.result-details {
+    margin-top: 1px;
+
+    color: #777;
+
+    font-size: 13px;
+
+    min-height: 18px;
+}
+
+
+/* =========================================================
+   ВЫБОР
+   ========================================================= */
+
+.choice-buttons {
+    display: none;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    width: 100%;
+
+    margin-top: 13px;
+}
+
+.choice-buttons.visible {
+    display: flex;
+}
+
+.choice-button {
+    width: 100%;
+
+    min-height: 51px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 1px;
+
+    background:
+        #1d1d1d;
+
+    border:
+        1px solid #333;
+}
+
+.choice-button:hover {
+    background:
+        #252525;
+
+    border-color:
+        #555;
+}
+
+.choice-main {
+    font-size: 19px;
+
+    font-weight: 700;
+}
+
+.choice-sub {
+    color: #777;
+
+    font-size: 12px;
+}
+
+.choice-button.hidden-choice {
+    display: none;
+}
+
+
+/* =========================================================
+   ЗАКРЫТИЕ
+   ========================================================= */
+
+.close-result-btn {
+    margin-top: 13px;
+
+    width: 100%;
+
+    min-height: 36px;
+
+    color: #777;
+
+    background: transparent;
+
+    border:
+        1px solid #2d2d2d;
+
+    border-radius: 7px;
+
+    font-size: 13px;
+}
+
+.close-result-btn:hover {
+    color: #aaa;
+
+    background:
+        #202020;
+
+    border-color:
+        #444;
+}
+
+
+/* =========================================================
+   ОНЛАЙН / WEBSOCKET ПАНЕЛЬ
+   ========================================================= */
+
+.online-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .78);
+    z-index: 20;
+}
+
+.online-overlay.visible {
+    display: flex;
+}
+
+.online-box {
+    width: min(90vw, 360px);
+    background: #181818;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 22px 20px 18px;
+}
+
+.online-title {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.online-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.online-row input {
+    flex: 1;
+    min-width: 140px;
+    background: #202020;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 9px 11px;
+    outline: none;
+}
+
+.online-row input:focus {
+    border-color: #555;
+}
+
+.online-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.online-buttons button.primary {
+    background: #2a3a2a;
+    border-color: #3a5a3a;
+}
+
+.online-buttons button.primary:hover {
+    background: #344434;
+}
+
+.online-status {
+    font-size: 12px;
+    margin-top: 12px;
+    color: var(--muted);
+    min-height: 16px;
+}
+
+.online-status.ok {
+    color: #6a6;
+}
+
+.online-status.err {
+    color: #a66;
+}
+
+.online-close {
+    margin-top: 14px;
+    width: 100%;
+    min-height: 36px;
+    color: #777;
+    background: transparent;
+    border: 1px solid #2d2d2d;
+    border-radius: 7px;
+    font-size: 13px;
+}
+
+.online-close:hover {
+    color: #aaa;
+    background: #202020;
+    border-color: #444;
+}
+
+
+/* =========================================================
+   МОБИЛЬНАЯ ВЕРСИЯ
+   ========================================================= */
+
+@media (max-width: 520px) {
+
+    body {
+        padding:
+            15px 14px;
+    }
+
+    .name {
+        font-size: 17px;
+    }
+
+    .top-actions button,
+    .bottom-actions button,
+    .bottom-actions a.button-link {
+        padding: 5px 7px;
+
+        font-size: 13px;
+    }
+
+    /*
+       Оставляем широкие кнопки и на телефоне.
+       Это специально сделано для удобства попадания.
+    */
+
+    .roll-btn,
+    .resource-button,
+    .resource-count {
+        min-width: 50px;
+
+        padding:
+            5px 8px;
+    }
+
+    /* Только на телефоне — больше воздуха между рядами − 🎲 + */
+    #symbols .row {
+        margin-bottom: 8px;
+    }
+
+    .result-box {
+        width:
+            min(90vw, 440px);
+
+        padding:
+            26px 18px 20px;
+    }
+
+    .result-type {
+        font-size: 34px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="sheet">
+
+
+<!-- =======================================================
+     ИМЯ
+     ======================================================= -->
+
+<div class="top">
+
+    <input
+        id="name"
+        class="name"
+        placeholder="Имя персонажа"
+        autocomplete="off"
+    >
+
+    <div class="top-actions">
+
+        <button
+            id="editBtn"
+            class="edit-btn"
+            onclick="toggleEditMode()"
+        >
+            Изменить
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     АСПЕКТЫ + ОБСТОЯТЕЛЬСТВА
+     ======================================================= -->
+
+<section>
+
+    <div class="section-divider"></div>
+
+    <div id="textAspects"></div>
+
+    <button
+        id="addAspectBtn"
+        class="add-btn"
+        onclick="addTextAspect()"
+    >
+        + Аспект
+    </button>
+
+
+    <div
+        class="section-divider"
+        style="margin-top:4px;"
+    ></div>
+
+
+    <div id="circumstances"></div>
+
+    <button
+        class="add-btn"
+        onclick="addCircumstance()"
+    >
+        + Обстоятельство
+    </button>
+
+</section>
+
+
+<!-- =======================================================
+     СИМВОЛЫ
+     ======================================================= -->
+
+<section>
+
+    <div class="section-divider"></div>
+
+    <div id="symbols"></div>
+
+    <button
+        id="addSymbolBtn"
+        class="add-btn"
+        onclick="addSymbol()"
+    >
+        + Символ
+    </button>
+
+</section>
+
+
+<!-- =======================================================
+     РЕСУРС
+     ======================================================= -->
+
+<section class="resource-section">
+
+    <div class="section-divider"></div>
+
+    <div class="resource-row">
+
+        <input
+            id="resourceName"
+            class="resource-name"
+            type="text"
+            value="Ресурс"
+            placeholder="Ресурс"
+            autocomplete="off"
+        >
+
+
+        <div class="roll-buttons">
+
+            <span
+                id="tricksContainer"
+                class="tricks-inline"
+            ></span>
+
+            <button
+                class="resource-button"
+                onclick="changeResource(-1)"
+                title="Потратить ресурс"
+            >
+                −
+            </button>
+
+
+            <div
+                id="resourceCount"
+                class="resource-count"
+            >
+                0
+            </div>
+
+
+            <button
+                class="resource-button"
+                onclick="changeResource(1)"
+                title="Получить ресурс"
+            >
+                +
+            </button>
+
+        </div>
+
+    </div>
+
+    <button
+        id="addTrickBtn"
+        class="add-btn"
+        onclick="addTrick()"
+    >
+        + Киношный Трюк
+    </button>
+
+</section>
+
+
+<!-- =======================================================
+     СОСТОЯНИЯ
+     ======================================================= -->
+
+<section>
+
+    <div class="section-divider"></div>
+
+    <div id="statesContainer"></div>
+
+    <div
+        id="stateAddActions"
+        class="state-add-actions"
+    >
+
+        <button
+            class="add-btn"
+            onclick="addStress()"
+        >
+            + Стресс
+        </button>
+
+
+        <button
+            class="add-btn"
+            onclick="addConsequence()"
+        >
+            + Последствие
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     ГАЛЕРЕЯ
+     ======================================================= -->
+
+<div
+    class="gallery"
+    id="gallery"
+    title="Клик слева — назад, справа — вперёд"
+>
+
+    <img
+        id="galleryImg"
+        class="gallery-img"
+        src="https://raw.githubusercontent.com/mikeoneseven/netgeroev/main/1.jpg"
+        alt=""
+    >
+
+    <div
+        class="gallery-hint"
+        id="galleryHint"
+    >
+        1 / 3
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     НИЖНЯЯ ПАНЕЛЬ
+     ======================================================= -->
+
+<div class="bottom">
+
+    <div
+        class="status"
+        id="status"
+    >
+        Изменения сохраняются автоматически в памяти браузера. Но 100% гарантию не потерять данные даёт только ручное сохранение в файл.
+    </div>
+
+
+    <div class="bottom-actions">
+
+        <button
+            onclick="exportCharacter()"
+        >
+            Сохранить
+        </button>
+
+
+        <button
+            onclick="importCharacter()"
+        >
+            Загрузить
+        </button>
+
+
+        <button
+            class="danger-btn"
+            onclick="resetCharacter()"
+        >
+            Сбросить
+        </button>
+
+    </div>
+
+
+    <div class="bottom-actions-divider"></div>
+
+
+    <div class="bottom-actions">
+
+        <button
+            id="onlineBtn"
+            onclick="openOnlinePanel()"
+        >
+            Онлайн
+        </button>
+
+        <a
+            class="button-link"
+            href="https://sites.google.com/view/netgeroev/sistema"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            Мои Счастливые Звёзды
+        </a>
+
+        <button
+            id="logsBtn"
+            onclick="toggleLogs()"
+        >
+            Логи
+        </button>
+
+    </div>
+
+
+    <div
+        class="roll-log-section"
+        id="rollLogSection"
+    >
+        <div
+            id="rollLog"
+            class="roll-log"
+        ></div>
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- =======================================================
+     ОКНО РЕЗУЛЬТАТА
+     ======================================================= -->
+
+<div
+    class="result"
+    id="result"
+>
+
+    <div
+        class="result-box"
+        id="resultBox"
+    >
+
+        <div
+            class="roll-dots"
+            id="rollDots"
+        >
+            .
+        </div>
+
+
+        <div
+            class="result-type"
+            id="resultType"
+        >
+        </div>
+
+
+        <div
+            class="result-details"
+            id="resultDetails"
+        >
+        </div>
+
+
+        <div
+            class="choice-buttons"
+            id="choiceButtons"
+        >
+
+            <button
+                id="successChoice"
+                class="choice-button"
+                onclick="chooseResult('success')"
+            >
+
+                <span class="choice-main">
+                    УСПЕХ
+                </span>
+
+                <span class="choice-sub">
+                    − Ресурс
+                </span>
+
+            </button>
+
+
+            <button
+                id="catastropheChoice"
+                class="choice-button"
+                onclick="chooseResult('catastrophe')"
+            >
+
+                <span class="choice-main">
+                    КАТАСТРОФА
+                </span>
+
+                <span class="choice-sub">
+                    + Ресурс
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <button
+            id="closeResultBtn"
+            class="close-result-btn"
+            onclick="closeResult()"
+        >
+            Закрыть
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     КИНОШНЫЙ ТРЮК — ПРОСМОТР
+     ======================================================= -->
+
+<div
+    class="trick-overlay"
+    id="trickViewOverlay"
+>
+
+    <div class="trick-box">
+
+        <div
+            class="trick-view-desc"
+            id="trickViewDesc"
+        ></div>
+
+        <div class="trick-actions">
+
+            <button
+                id="trickApplyBtn"
+                onclick="applyTrick()"
+            >
+                Заплатить
+            </button>
+
+            <button
+                onclick="closeTrickView()"
+            >
+                Закрыть
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     КИНОШНЫЙ ТРЮК — РЕДАКТИРОВАНИЕ
+     ======================================================= -->
+
+<div
+    class="trick-overlay"
+    id="trickEditOverlay"
+>
+
+    <div class="trick-box">
+
+        <div class="trick-edit-label">
+            Заголовок (можно эмодзи)
+        </div>
+
+        <input
+            id="trickEditTitle"
+            class="trick-edit-input"
+            type="text"
+            placeholder="🐖"
+            autocomplete="off"
+        >
+
+        <div class="trick-edit-label">
+            Цена (ресурс)
+        </div>
+
+        <input
+            id="trickEditCost"
+            class="trick-edit-input"
+            type="number"
+            min="0"
+            max="7"
+            value="1"
+        >
+
+        <div class="trick-edit-label">
+            Описание
+        </div>
+
+        <textarea
+            id="trickEditDesc"
+            class="trick-edit-area"
+            placeholder="Что делает трюк…"
+        ></textarea>
+
+        <div class="trick-actions">
+
+            <button
+                onclick="saveTrickEdit()"
+            >
+                Сохранить
+            </button>
+
+            <button
+                class="danger"
+                onclick="deleteTrickEdit()"
+            >
+                Удалить
+            </button>
+
+            <button
+                onclick="closeTrickEdit()"
+            >
+                Закрыть
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     ОНЛАЙН / WEBSOCKET ПАНЕЛЬ
+     ======================================================= -->
+
+<div
+    class="online-overlay"
+    id="onlineOverlay"
+>
+
+    <div class="online-box">
+
+        <div class="online-row">
+            <input
+                id="wsUrl"
+                type="text"
+                placeholder="ws://… или wss://…"
+                value="ws://yippee-scouring-clear.ngrok-free.dev"
+            >
+        </div>
+
+        <div class="online-row">
+            <input
+                id="wsPassword"
+                type="text"
+                placeholder="Пароль WebSocket (из OBS)"
+                autocomplete="off"
+            >
+        </div>
+
+        <div
+            class="online-status"
+            id="wsStatus"
+        >
+            Сигнал уходит при каждом броске
+        </div>
+
+        <button
+            class="online-close"
+            onclick="closeOnlinePanel()"
+        >
+            Закрыть
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     ИМПОРТ
+     ======================================================= -->
+
+<input
+    type="file"
+    id="importFile"
+    accept=".json"
+    style="display:none"
+>
+
+
+<script>
+
+
+/* =========================================================
+   ГЛОБАЛЬНЫЕ НАСТРОЙКИ МАТЕМАТИКИ
+   ========================================================= */
+
+const CHANCE_CHOICE = 22;
+
+
+const ROLL_CONFIGS = {
+
+    "0 MINUS": 15,
+    "0": 37,
+    "0 PLUS": 59,
+
+    "1 MINUS": 24,
+    "1": 46,
+    "1 PLUS": 68,
+
+    "2 MINUS": 33,
+    "2": 55,
+    "2 PLUS": 77
+
+};
+
+
+/* =========================================================
+   LOCAL STORAGE
+   ========================================================= */
+
+const STORAGE_KEY =
+    "nri_character_v1";
+
+
+/* =========================================================
+   ПЕРСОНАЖ ПО УМОЛЧАНИЮ
+   ========================================================= */
+
+function defaultCharacter() {
+
+    return {
+
+        name: "",
+
+        textAspects: [],
+
+        circumstances: [],
+
+        symbols: [],
+
+        states: [],
+
+        resource: {
+
+            name: "Ресурс",
+
+            value: 0
+
+        },
+
+        tricks: []
+
+    };
+
+}
+
+
+/* =========================================================
+   ЗАГРУЗКА
+   ========================================================= */
+
+function getCharacter() {
+
+    try {
+
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+
+        if (!saved) {
+
+            return defaultCharacter();
+
+        }
+
+
+        const c =
+            JSON.parse(saved);
+
+
+        const resource =
+            c.resource || {};
+
+
+        let resourceValue =
+            Number(
+                resource.value
+            );
+
+
+        if (
+            !Number.isFinite(
+                resourceValue
+            )
+        ) {
+
+            resourceValue = 0;
+
+        }
+
+
+        resourceValue =
+            Math.max(
+                0,
+                Math.min(
+                    7,
+                    Math.floor(
+                        resourceValue
+                    )
+                )
+            );
+
+
+        return {
+
+            name:
+                c.name || "",
+
+
+            textAspects:
+                Array.isArray(
+                    c.textAspects
+                )
+                    ? c.textAspects
+                    : [],
+
+
+            circumstances:
+                Array.isArray(
+                    c.circumstances
+                )
+                    ? c.circumstances
+                    : [],
+
+
+            symbols:
+                Array.isArray(
+                    c.symbols
+                )
+                    ? c.symbols
+                    : [],
+
+
+            states:
+                Array.isArray(
+                    c.states
+                )
+                    ? c.states
+                    : [],
+
+
+            resource: {
+
+                name:
+                    resource.name ||
+                    "Ресурс",
+
+                value:
+                    resourceValue
+
+            },
+
+            tricks:
+                Array.isArray(c.tricks)
+                    ? c.tricks.map(t => ({
+                        title:
+                            (t && t.title) || "",
+                        cost:
+                            Math.max(
+                                0,
+                                Math.min(
+                                    7,
+                                    Number(t && t.cost) || 0
+                                )
+                            ),
+                        description:
+                            (t && t.description) || ""
+                    }))
+                    : []
+
+        };
+
+    }
+    catch {
+
+        return defaultCharacter();
+
+    }
+
+}
+
+
+/* =========================================================
+   ГЛОБАЛЬНОЕ СОСТОЯНИЕ
+   ========================================================= */
+
+let character =
+    getCharacter();
+
+
+let editMode = false;
+
+
+let pendingChoice = false;
+
+
+/* =========================================================
+   СОХРАНЕНИЕ
+   ========================================================= */
+
+function save() {
+
+    localStorage.setItem(
+
+        STORAGE_KEY,
+
+        JSON.stringify(
+            character
+        )
+
+    );
+
+}
+
+
+/* =========================================================
+   ИМЯ
+   ========================================================= */
+
+document
+    .getElementById("name")
+    .addEventListener(
+        "input",
+        event => {
+
+            if (!editMode) {
+
+                return;
+
+            }
+
+            character.name =
+                event.target.value;
+
+            save();
+
+        }
+    );
+
+
+/* =========================================================
+   РЕЖИМ РЕДАКТИРОВАНИЯ
+   ========================================================= */
+
+function toggleEditMode() {
+
+    editMode =
+        !editMode;
+
+
+    const button =
+        document.getElementById(
+            "editBtn"
+        );
+
+
+    button.classList.toggle(
+        "active",
+        editMode
+    );
+
+
+    button.textContent =
+        editMode
+            ? "Готово"
+            : "Изменить";
+
+
+    render();
+
+}
+
+
+/* =========================================================
+   АСПЕКТЫ
+   ========================================================= */
+
+function autoResizeField(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+}
+
+
+/*
+   Ширина поля по тексту / placeholder,
+   чтобы пустая часть строки не ловила тап.
+*/
+function fitTextField(el) {
+    if (!el) {
+        return;
+    }
+
+    const style =
+        window.getComputedStyle(el);
+
+    const mirror =
+        document.createElement("span");
+
+    mirror.textContent =
+        el.value ||
+        el.placeholder ||
+        "М";
+
+    mirror.style.cssText =
+        "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;" +
+        "font:" + style.font + ";" +
+        "letter-spacing:" + style.letterSpacing + ";" +
+        "padding:0 2px;";
+
+    document.body.appendChild(mirror);
+
+    const w =
+        Math.ceil(
+            mirror.getBoundingClientRect().width
+        ) + 14;
+
+    mirror.remove();
+
+    const max =
+        el.parentElement
+            ? Math.max(
+                80,
+                el.parentElement.clientWidth - 56
+            )
+            : 280;
+
+    el.style.width =
+        Math.min(
+            Math.max(w, 72),
+            max
+        ) + "px";
+}
+
+
+function renderTextAspects() {
+
+    const container =
+        document.getElementById(
+            "textAspects"
+        );
+
+
+    container.innerHTML = "";
+
+
+    character.textAspects.forEach(
+        (aspect, index) => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "row wrap-row";
+
+
+            const input =
+                document.createElement(
+                    "textarea"
+                );
+
+
+            input.className =
+                "aspect-input";
+
+
+            input.placeholder =
+                "Аспект";
+
+
+            input.rows = 1;
+
+
+            input.value =
+                aspect.text || "";
+
+
+            input.readOnly =
+                !editMode;
+
+
+            input.addEventListener(
+                "input",
+                () => {
+
+                    if (!editMode) {
+
+                        return;
+
+                    }
+
+                    character
+                        .textAspects[index]
+                        .text =
+                        input.value;
+
+                    autoResizeField(input);
+
+                    save();
+
+                }
+            );
+
+
+            row.appendChild(
+                input
+            );
+
+
+            const infinity =
+                document.createElement(
+                    "span"
+                );
+
+
+            infinity.className =
+                "aspect-infinity";
+
+
+            infinity.textContent =
+                "∞";
+
+
+            infinity.title =
+                "Можно использовать сколько угодно раз";
+
+
+            row.appendChild(
+                infinity
+            );
+
+
+            if (editMode) {
+
+                const deleteButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                deleteButton.className =
+                    "small-btn";
+
+
+                deleteButton.style.paddingTop = "2px";
+
+
+                deleteButton.textContent =
+                    "×";
+
+
+                deleteButton.title =
+                    "Удалить аспект";
+
+
+                deleteButton.onclick =
+                    () => {
+
+                        character
+                            .textAspects
+                            .splice(
+                                index,
+                                1
+                            );
+
+
+                        save();
+
+                        renderTextAspects();
+
+                    };
+
+
+                row.appendChild(
+                    deleteButton
+                );
+
+            }
+
+
+            container.appendChild(
+                row
+            );
+
+
+            autoResizeField(input);
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ДОБАВИТЬ АСПЕКТ
+   ========================================================= */
+
+function addTextAspect() {
+
+    if (!editMode) {
+
+        return;
+
+    }
+
+
+    character.textAspects.push({
+
+        text: ""
+
+    });
+
+
+    save();
+
+    renderTextAspects();
+
+}
+
+
+/* =========================================================
+   ОБСТОЯТЕЛЬСТВА
+   ========================================================= */
+
+function renderCircumstances() {
+
+    const container =
+        document.getElementById(
+            "circumstances"
+        );
+
+
+    container.innerHTML = "";
+
+
+    character.circumstances.forEach(
+        (circumstance, index) => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "circumstance-row";
+
+
+            const input =
+                document.createElement(
+                    "textarea"
+                );
+
+
+            input.className =
+                "circumstance-input";
+
+
+            input.placeholder =
+                "Обстоятельство";
+
+
+            input.rows = 1;
+
+
+            input.value =
+                circumstance.text || "";
+
+
+            input.readOnly =
+                false;
+
+
+            const usedUp =
+                !!circumstance.use1 &&
+                !!circumstance.use2;
+
+
+            if (usedUp) {
+                input.classList.add(
+                    "used-up"
+                );
+            }
+
+
+            input.addEventListener(
+                "input",
+                () => {
+
+                    character
+                        .circumstances[index]
+                        .text =
+                        input.value;
+
+                    autoResizeField(input);
+
+                    fitTextField(input);
+
+                    save();
+
+                }
+            );
+
+
+            row.appendChild(
+                input
+            );
+
+
+            const spacer =
+                document.createElement(
+                    "div"
+                );
+
+
+            spacer.className =
+                "row-spacer";
+
+
+            row.appendChild(
+                spacer
+            );
+
+
+            const checks =
+                document.createElement(
+                    "div"
+                );
+
+
+            checks.className =
+                "circumstance-checks";
+
+
+            const check1 =
+                document.createElement(
+                    "input"
+                );
+
+
+            check1.type =
+                "checkbox";
+
+
+            check1.checked =
+                !!circumstance.use1;
+
+
+            check1.title =
+                "Использование 1";
+
+
+            check1.addEventListener(
+                "change",
+                () => {
+
+                    character
+                        .circumstances[index]
+                        .use1 =
+                        check1.checked;
+
+                    save();
+
+                    renderCircumstances();
+
+                }
+            );
+
+
+            const check2 =
+                document.createElement(
+                    "input"
+                );
+
+
+            check2.type =
+                "checkbox";
+
+
+            check2.checked =
+                !!circumstance.use2;
+
+
+            check2.title =
+                "Использование 2";
+
+
+            check2.addEventListener(
+                "change",
+                () => {
+
+                    character
+                        .circumstances[index]
+                        .use2 =
+                        check2.checked;
+
+                    save();
+
+                    renderCircumstances();
+
+                }
+            );
+
+
+            checks.append(
+                check1,
+                check2
+            );
+
+
+            row.appendChild(
+                checks
+            );
+
+
+            /*
+               Крестик удаления:
+               — всегда в режиме редактирования;
+               — в режиме просмотра — когда оба чекбокса отмечены
+                 (текст при этом зачёркнут через used-up).
+            */
+
+            if (editMode || usedUp) {
+
+                const deleteButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                deleteButton.className =
+                    "small-btn";
+
+
+                deleteButton.textContent =
+                    "×";
+
+
+                deleteButton.title =
+                    "Удалить обстоятельство";
+
+
+                deleteButton.onclick =
+                    () => {
+
+                        character
+                            .circumstances
+                            .splice(
+                                index,
+                                1
+                            );
+
+
+                        save();
+
+                        renderCircumstances();
+
+                    };
+
+
+                row.appendChild(
+                    deleteButton
+                );
+
+            }
+
+
+            container.appendChild(
+                row
+            );
+
+
+            autoResizeField(input);
+
+            fitTextField(input);
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ДОБАВИТЬ ОБСТОЯТЕЛЬСТВО
+   ========================================================= */
+
+function addCircumstance() {
+
+    character.circumstances.push({
+
+        text: "",
+
+        use1: false,
+
+        use2: false
+
+    });
+
+
+    save();
+
+    renderCircumstances();
+
+}
+
+
+/* =========================================================
+   СИМВОЛЫ
+   ========================================================= */
+
+function renderSymbols() {
+
+    const container =
+        document.getElementById(
+            "symbols"
+        );
+
+
+    container.innerHTML = "";
+
+
+    character.symbols.forEach(
+        (symbol, index) => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "row";
+
+
+            /* =================================================
+               НАЗВАНИЕ СИМВОЛА
+               ================================================= */
+
+            const name =
+                document.createElement(
+                    "input"
+                );
+
+
+            name.type =
+                "text";
+
+
+            name.className =
+                "symbol-name";
+
+
+            name.placeholder =
+                "Символ";
+
+
+            name.value =
+                symbol.text || "";
+
+
+            name.readOnly =
+                !editMode;
+
+
+            name.addEventListener(
+                "input",
+                () => {
+
+                    if (!editMode) {
+
+                        return;
+
+                    }
+
+
+                    character
+                        .symbols[index]
+                        .text =
+                        name.value;
+
+
+                    save();
+
+                }
+            );
+
+
+            row.appendChild(
+                name
+            );
+
+
+            /* =================================================
+               СИМВОЛ / ВЫПАДАЮЩИЙ СПИСОК
+               ================================================= */
+
+            if (editMode) {
+
+                /*
+                   В режиме редактирования
+                   оставляем настоящий select.
+                */
+
+                const select =
+                    document.createElement(
+                        "select"
+                    );
+
+
+                const symbolTypes = [
+
+                    {
+                        value: "0",
+                        label: "0"
+                    },
+
+                    {
+                        value: "1",
+                        label: "⭐"
+                    },
+
+                    {
+                        value: "2",
+                        label: "⭐⭐"
+                    }
+
+                ];
+
+
+                symbolTypes.forEach(
+                    type => {
+
+                        const option =
+                            document.createElement(
+                                "option"
+                            );
+
+
+                        option.value =
+                            type.value;
+
+
+                        option.textContent =
+                            type.label;
+
+
+                        option.selected =
+                            String(
+                                symbol.level ?? 0
+                            ) ===
+                            type.value;
+
+
+                        select.appendChild(
+                            option
+                        );
+
+                    }
+                );
+
+
+                select.addEventListener(
+                    "change",
+                    () => {
+
+                        if (!editMode) {
+
+                            return;
+
+                        }
+
+
+                        character
+                            .symbols[index]
+                            .level =
+                            Number(
+                                select.value
+                            );
+
+
+                        save();
+
+                    }
+                );
+
+
+                row.appendChild(
+                    select
+                );
+
+            }
+
+            else {
+
+                /*
+                   В режиме просмотра
+                   select полностью исчезает.
+
+                   Вместо него просто текстовый
+                   символ.
+
+                   0 -> ничего
+                   1 -> ⭐
+                   2 -> ⭐⭐
+                */
+
+                const level =
+                    Number(
+                        symbol.level ?? 0
+                    );
+
+
+                if (
+                    level > 0
+                ) {
+
+                    const symbolDisplay =
+                        document.createElement(
+                            "span"
+                        );
+
+
+                    symbolDisplay.className =
+                        "symbol-display";
+
+
+                    if (
+                        level === 1
+                    ) {
+
+                        symbolDisplay.textContent =
+                            "⭐";
+
+                    }
+                    else if (
+                        level === 2
+                    ) {
+
+                        symbolDisplay.textContent =
+                            "⭐⭐";
+
+                    }
+
+
+                    row.appendChild(
+                        symbolDisplay
+                    );
+
+                }
+
+            }
+
+
+            /* =================================================
+               КНОПКИ БРОСКА
+               ================================================= */
+
+            const buttons =
+                document.createElement(
+                    "div"
+                );
+
+
+            buttons.className =
+                "roll-buttons";
+
+
+            const minus =
+                document.createElement(
+                    "button"
+                );
+
+
+            minus.className =
+                "roll-btn";
+
+
+            minus.textContent =
+                "−";
+
+
+            minus.title =
+                "С помехой";
+
+
+            minus.onclick =
+                () => roll(
+                    symbol,
+                    "minus"
+                );
+
+
+            const normal =
+                document.createElement(
+                    "button"
+                );
+
+
+            normal.className =
+                "roll-btn main";
+
+
+            normal.textContent =
+                "🎲";
+
+
+            normal.title =
+                "Обычный бросок";
+
+
+            normal.onclick =
+                () => roll(
+                    symbol,
+                    "normal"
+                );
+
+
+            const plus =
+                document.createElement(
+                    "button"
+                );
+
+
+            plus.className =
+                "roll-btn";
+
+
+            plus.textContent =
+                "+";
+
+
+            plus.title =
+                "С преимуществом";
+
+
+            plus.onclick =
+                () => roll(
+                    symbol,
+                    "plus"
+                );
+
+
+            buttons.append(
+                minus,
+                normal,
+                plus
+            );
+
+
+            row.appendChild(
+                buttons
+            );
+
+
+            /* =================================================
+               УДАЛЕНИЕ
+               ================================================= */
+
+            if (editMode) {
+
+                const deleteButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                deleteButton.className =
+                    "small-btn";
+
+
+                deleteButton.textContent =
+                    "×";
+
+
+                deleteButton.title =
+                    "Удалить символ";
+
+
+                deleteButton.onclick =
+                    () => {
+
+                        character
+                            .symbols
+                            .splice(
+                                index,
+                                1
+                            );
+
+
+                        save();
+
+                        renderSymbols();
+
+                    };
+
+
+                row.appendChild(
+                    deleteButton
+                );
+
+            }
+
+
+            container.appendChild(
+                row
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ДОБАВИТЬ СИМВОЛ
+   ========================================================= */
+
+function addSymbol() {
+
+    if (!editMode) {
+
+        return;
+
+    }
+
+
+    character.symbols.push({
+
+        text: "",
+
+        level: 0
+
+    });
+
+
+    save();
+
+    renderSymbols();
+
+}
+
+
+/* =========================================================
+   РЕСУРС
+   ========================================================= */
+
+function renderResource() {
+
+    const name =
+        document.getElementById(
+            "resourceName"
+        );
+
+
+    const count =
+        document.getElementById(
+            "resourceCount"
+        );
+
+
+    name.value =
+        character.resource.name;
+
+
+    name.readOnly =
+        !editMode;
+
+
+    count.textContent =
+        character.resource.value;
+
+
+    renderTricks();
+
+}
+
+
+/* =========================================================
+   КИНОШНЫЕ ТРЮКИ
+   ========================================================= */
+
+let activeTrickIndex = null;
+
+
+function renderTricks() {
+
+    const container =
+        document.getElementById(
+            "tricksContainer"
+        );
+
+
+    const addBtn =
+        document.getElementById(
+            "addTrickBtn"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    if (!Array.isArray(character.tricks)) {
+        character.tricks = [];
+    }
+
+
+    /*
+       Слева дешёвые, справа дорогие.
+       index сохраняем из исходного массива.
+    */
+
+    const ordered =
+        character.tricks
+            .map(
+                (trick, index) => ({
+                    trick,
+                    index
+                })
+            )
+            .sort(
+                (a, b) =>
+                    (
+                        Number(a.trick.cost) || 0
+                    ) -
+                    (
+                        Number(b.trick.cost) || 0
+                    )
+            );
+
+
+    ordered.forEach(
+        ({ trick, index }) => {
+
+            const btn =
+                document.createElement(
+                    "button"
+                );
+
+
+            btn.className =
+                "trick-btn";
+
+
+            const title =
+                (trick.title || "").trim() ||
+                "•";
+
+
+            const cost =
+                Number(trick.cost) || 0;
+
+
+            const titleSpan =
+                document.createElement(
+                    "span"
+                );
+
+
+            titleSpan.textContent =
+                title;
+
+
+            btn.appendChild(
+                titleSpan
+            );
+
+
+            const costSpan =
+                document.createElement(
+                    "span"
+                );
+
+
+            costSpan.className =
+                "trick-btn-cost";
+
+
+            costSpan.textContent =
+                String(cost);
+
+
+            btn.appendChild(
+                costSpan
+            );
+
+
+            btn.title =
+                editMode
+                    ? "Редактировать трюк"
+                    : (
+                        title +
+                        " — " +
+                        cost +
+                        " ресурс(а)"
+                    );
+
+
+            btn.onclick =
+                () => {
+
+                    if (editMode) {
+                        openTrickEdit(index);
+                    } else {
+                        openTrickView(index);
+                    }
+
+                };
+
+
+            container.appendChild(
+                btn
+            );
+
+        }
+    );
+
+
+    if (addBtn) {
+        addBtn.style.display =
+            editMode
+                ? "block"
+                : "none";
+    }
+
+}
+
+
+function addTrick() {
+
+    if (!editMode) {
+        return;
+    }
+
+
+    if (!Array.isArray(character.tricks)) {
+        character.tricks = [];
+    }
+
+
+    character.tricks.push({
+        title: "🐖",
+        cost: 1,
+        description: ""
+    });
+
+
+    save();
+
+    renderTricks();
+
+    openTrickEdit(
+        character.tricks.length - 1
+    );
+
+}
+
+
+function openTrickView(index) {
+
+    const trick =
+        character.tricks[index];
+
+
+    if (!trick) {
+        return;
+    }
+
+
+    activeTrickIndex = index;
+
+
+    const title =
+        (trick.title || "").trim();
+
+
+    const cost =
+        Number(trick.cost) || 0;
+
+
+    const desc =
+        (trick.description || "").trim();
+
+
+    /*
+       Эмблема — первый символ текста описания.
+    */
+
+    document.getElementById(
+        "trickViewDesc"
+    ).textContent =
+        title
+            ? (
+                title +
+                (
+                    desc
+                        ? " " + desc
+                        : ""
+                )
+            )
+            : desc;
+
+
+    const canApply =
+        cost <= 0 ||
+        character.resource.value >= cost;
+
+
+    const applyBtn =
+        document.getElementById(
+            "trickApplyBtn"
+        );
+
+
+    applyBtn.disabled = !canApply;
+
+    applyBtn.innerHTML =
+        canApply
+            ? (
+                "Заплатить<br>" +
+                cost +
+                " ресурс(а)"
+            )
+            : "Не хватает ресурса";
+
+
+    document
+        .getElementById(
+            "trickViewOverlay"
+        )
+        .classList
+        .add("visible");
+
+}
+
+
+function closeTrickView() {
+
+    document
+        .getElementById(
+            "trickViewOverlay"
+        )
+        .classList
+        .remove("visible");
+
+
+    activeTrickIndex = null;
+
+}
+
+
+function applyTrick() {
+
+    if (
+        activeTrickIndex === null
+    ) {
+        return;
+    }
+
+
+    const trick =
+        character.tricks[activeTrickIndex];
+
+
+    if (!trick) {
+        return;
+    }
+
+
+    const cost =
+        Number(trick.cost) || 0;
+
+
+    if (
+        cost > 0 &&
+        character.resource.value < cost
+    ) {
+        return;
+    }
+
+
+    const title =
+        (trick.title || "").trim() || "Трюк";
+
+
+    if (cost > 0) {
+        changeResource(
+            -cost,
+            "Трюк " + title
+        );
+    } else {
+        addRollLog(
+            "Трюк " + title + " → без затрат"
+        );
+    }
+
+
+    closeTrickView();
+
+}
+
+
+function openTrickEdit(index) {
+
+    const trick =
+        character.tricks[index];
+
+
+    if (!trick) {
+        return;
+    }
+
+
+    activeTrickIndex = index;
+
+
+    document.getElementById(
+        "trickEditTitle"
+    ).value =
+        trick.title || "";
+
+
+    document.getElementById(
+        "trickEditCost"
+    ).value =
+        Number(trick.cost) || 0;
+
+
+    document.getElementById(
+        "trickEditDesc"
+    ).value =
+        trick.description || "";
+
+
+    document
+        .getElementById(
+            "trickEditOverlay"
+        )
+        .classList
+        .add("visible");
+
+}
+
+
+function closeTrickEdit() {
+
+    document
+        .getElementById(
+            "trickEditOverlay"
+        )
+        .classList
+        .remove("visible");
+
+
+    activeTrickIndex = null;
+
+}
+
+
+function saveTrickEdit() {
+
+    if (
+        activeTrickIndex === null
+    ) {
+        return;
+    }
+
+
+    const trick =
+        character.tricks[activeTrickIndex];
+
+
+    if (!trick) {
+        return;
+    }
+
+
+    trick.title =
+        document
+            .getElementById(
+                "trickEditTitle"
+            )
+            .value;
+
+
+    let cost =
+        Number(
+            document.getElementById(
+                "trickEditCost"
+            ).value
+        );
+
+
+    if (!Number.isFinite(cost)) {
+        cost = 0;
+    }
+
+
+    trick.cost =
+        Math.max(
+            0,
+            Math.min(
+                7,
+                Math.floor(cost)
+            )
+        );
+
+
+    trick.description =
+        document
+            .getElementById(
+                "trickEditDesc"
+            )
+            .value;
+
+
+    save();
+
+    renderTricks();
+
+    closeTrickEdit();
+
+}
+
+
+function deleteTrickEdit() {
+
+    if (
+        activeTrickIndex === null
+    ) {
+        return;
+    }
+
+
+    character.tricks.splice(
+        activeTrickIndex,
+        1
+    );
+
+
+    save();
+
+    renderTricks();
+
+    closeTrickEdit();
+
+}
+
+
+/* =========================================================
+   НАЗВАНИЕ РЕСУРСА
+   ========================================================= */
+
+document
+    .getElementById(
+        "resourceName"
+    )
+    .addEventListener(
+        "input",
+        event => {
+
+            if (!editMode) {
+
+                return;
+
+            }
+
+            character.resource.name =
+                event.target.value;
+
+
+            save();
+
+        }
+    );
+
+
+/* =========================================================
+   ИЗМЕНИТЬ РЕСУРС
+   ========================================================= */
+
+function changeResource(
+    amount,
+    logLabel
+) {
+
+    const current =
+        character.resource.value;
+
+
+    const next =
+        Math.max(
+            0,
+            Math.min(
+                7,
+                current + amount
+            )
+        );
+
+
+    if (next === current) {
+        return;
+    }
+
+
+    character.resource.value =
+        next;
+
+
+    save();
+
+    renderResource();
+
+
+    /*
+       logLabel === false — не писать в лог
+       (уже логируется снаружи).
+       Иначе — подпись операции.
+    */
+
+    if (logLabel !== false) {
+        const delta =
+            next - current;
+
+        const deltaText =
+            delta > 0
+                ? "+" + delta
+                : String(delta);
+
+        addRollLog(
+            (logLabel || "Ресурс") +
+            " → " +
+            deltaText +
+            " (стало " +
+            next +
+            ")"
+        );
+    }
+
+}
+
+
+/* =========================================================
+   СОСТОЯНИЯ
+   ========================================================= */
+
+function renderStates() {
+
+    const container =
+        document.getElementById(
+            "statesContainer"
+        );
+
+
+    container.innerHTML = "";
+
+
+    character.states.forEach(
+        (state, index) => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "row state-row";
+
+
+            const checkbox =
+                document.createElement(
+                    "input"
+                );
+
+
+            checkbox.type =
+                "checkbox";
+
+
+            checkbox.checked =
+                !!state.checked;
+
+
+            const input =
+                document.createElement(
+                    "input"
+                );
+
+
+            input.type =
+                "text";
+
+
+            input.className =
+                "state-text";
+
+
+            input.placeholder =
+                state.type === "stress"
+                    ? "Стресс"
+                    : "Последствие";
+
+
+            input.value =
+                state.text || "";
+
+
+            /*
+               Текст Стресса и Последствия
+               можно менять всегда,
+               без режима редактирования.
+            */
+
+            input.readOnly =
+                false;
+
+
+            function applyMarked(on) {
+                input.classList.toggle(
+                    "marked",
+                    on
+                );
+
+                row.classList.toggle(
+                    "marked",
+                    on
+                );
+
+                if (on) {
+                    input.style.color =
+                        "#f0a0a0";
+                    input.style.webkitTextFillColor =
+                        "#f0a0a0";
+                } else {
+                    input.style.color =
+                        "";
+                    input.style.webkitTextFillColor =
+                        "";
+                }
+            }
+
+
+            applyMarked(!!state.checked);
+
+
+            input.addEventListener(
+                "input",
+                () => {
+
+                    character
+                        .states[index]
+                        .text =
+                        input.value;
+
+
+                    fitTextField(input);
+
+                    save();
+
+                }
+            );
+
+
+            checkbox.addEventListener(
+                "change",
+                () => {
+
+                    character
+                        .states[index]
+                        .checked =
+                        checkbox.checked;
+
+
+                    applyMarked(
+                        checkbox.checked
+                    );
+
+
+                    save();
+
+                }
+            );
+
+
+            /*
+               Порядок: текст → пустое место → галочка → ×
+            */
+
+            row.appendChild(
+                input
+            );
+
+
+            const spacer =
+                document.createElement(
+                    "div"
+                );
+
+
+            spacer.className =
+                "row-spacer";
+
+
+            row.appendChild(
+                spacer
+            );
+
+
+            row.appendChild(
+                checkbox
+            );
+
+
+            if (editMode) {
+
+                const deleteButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                deleteButton.className =
+                    "small-btn";
+
+
+                deleteButton.textContent =
+                    "×";
+
+
+                deleteButton.title =
+                    "Удалить";
+
+
+                deleteButton.onclick =
+                    () => {
+
+                        character
+                            .states
+                            .splice(
+                                index,
+                                1
+                            );
+
+
+                        save();
+
+                        renderStates();
+
+                    };
+
+
+                row.appendChild(
+                    deleteButton
+                );
+
+            }
+
+
+            container.appendChild(
+                row
+            );
+
+
+            fitTextField(input);
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ДОБАВИТЬ СТРЕСС
+   ========================================================= */
+
+function addStress() {
+
+    if (!editMode) {
+
+        return;
+
+    }
+
+
+    character.states.push({
+
+        type: "stress",
+
+        checked: false,
+
+        text: ""
+
+    });
+
+
+    save();
+
+    renderStates();
+
+}
+
+
+/* =========================================================
+   ДОБАВИТЬ ПОСЛЕДСТВИЕ
+   ========================================================= */
+
+function addConsequence() {
+
+    if (!editMode) {
+
+        return;
+
+    }
+
+
+    character.states.push({
+
+        type: "consequence",
+
+        checked: false,
+
+        text: ""
+
+    });
+
+
+    save();
+
+    renderStates();
+
+}
+
+
+/* =========================================================
+   КЛЮЧ БРОСКА
+   ========================================================= */
+
+function getRollKey(
+    symbol,
+    mode
+) {
+
+    const level =
+        Number(
+            symbol.level ?? 0
+        );
+
+
+    if (
+        mode === "minus"
+    ) {
+
+        return `${level} MINUS`;
+
+    }
+
+
+    if (
+        mode === "plus"
+    ) {
+
+        return `${level} PLUS`;
+
+    }
+
+
+    return `${level}`;
+
+}
+
+
+/* =========================================================
+   РАСЧЁТ ИСХОДА
+   ========================================================= */
+
+function calculateOutcome(
+    randomNumber,
+    chanceSuccess
+) {
+
+    if (
+        randomNumber <=
+        chanceSuccess
+    ) {
+
+        return "УСПЕХ";
+
+    }
+
+
+    if (
+        randomNumber <=
+        chanceSuccess +
+        CHANCE_CHOICE
+    ) {
+
+        return "ВЫБОР";
+
+    }
+
+
+    return "КАТАСТРОФА";
+
+}
+
+
+/* =========================================================
+   БРОСОК
+   ========================================================= */
+
+function roll(
+    symbol,
+    mode
+) {
+
+    const key =
+        getRollKey(
+            symbol,
+            mode
+        );
+
+
+    const chanceSuccess =
+        ROLL_CONFIGS[key];
+
+
+    if (
+        typeof chanceSuccess !==
+        "number"
+    ) {
+
+        console.error(
+            "Не найден RollConfig:",
+            key
+        );
+
+        return;
+
+    }
+
+
+    const randomNumber =
+        Math.floor(
+            Math.random() * 100
+        ) + 1;
+
+
+    const outcome =
+        calculateOutcome(
+            randomNumber,
+            chanceSuccess
+        );
+
+
+    const overlay =
+        document.getElementById(
+            "result"
+        );
+
+
+    const dots =
+        document.getElementById(
+            "rollDots"
+        );
+
+
+    const resultText =
+        document.getElementById(
+            "resultType"
+        );
+
+
+    const details =
+        document.getElementById(
+            "resultDetails"
+        );
+
+
+    const choices =
+        document.getElementById(
+            "choiceButtons"
+        );
+
+
+    const successChoice =
+        document.getElementById(
+            "successChoice"
+        );
+
+
+    const catastropheChoice =
+        document.getElementById(
+            "catastropheChoice"
+        );
+
+
+    /*
+       Сбрасываем старое состояние.
+    */
+
+    resultText.classList.remove(
+        "visible",
+        "success",
+        "catastrophe"
+    );
+
+
+    resultText.textContent =
+        "";
+
+
+    choices.classList.remove(
+        "visible"
+    );
+
+
+    successChoice.classList.remove(
+        "hidden-choice"
+    );
+
+
+    catastropheChoice.classList.remove(
+        "hidden-choice"
+    );
+
+
+    pendingChoice =
+        false;
+
+
+    overlay.classList.add(
+        "visible"
+    );
+
+
+    dots.style.display =
+        "flex";
+
+
+    dots.textContent =
+        ".";
+
+
+    /*
+       В окне теперь показываем только:
+
+       0, обычный
+       ⭐, с преимуществом
+       ⭐⭐, с помехой
+
+       Без слова "Символ".
+    */
+
+    const level =
+        Number(
+            symbol.level ?? 0
+        );
+
+
+    let symbolLabel;
+
+
+    if (
+        level === 0
+    ) {
+
+        symbolLabel = "0";
+
+    }
+    else if (
+        level === 1
+    ) {
+
+        symbolLabel = "⭐";
+
+    }
+    else {
+
+        symbolLabel = "⭐⭐";
+
+    }
+
+
+    let rollModeLabel;
+
+
+    if (
+        mode === "minus"
+    ) {
+
+        rollModeLabel =
+            "с помехой";
+
+    }
+    else if (
+        mode === "plus"
+    ) {
+
+        rollModeLabel =
+            "с преимуществом";
+
+    }
+    else {
+
+        rollModeLabel =
+            "обычный";
+
+    }
+
+
+    const symbolName =
+        (symbol.text || "").trim() || "Символ";
+
+
+    details.textContent =
+        `${symbolName}, ${symbolLabel}, ${rollModeLabel}`;
+
+
+    /*
+       Сигнал в OBS — сразу, до анимации.
+       ВЫБОР уходит только после решения игрока.
+    */
+
+    if (outcome !== "ВЫБОР") {
+        sendRollSignal(outcome);
+        addRollLog(
+            details.textContent +
+            " → " +
+            outcome
+        );
+    }
+
+
+    function showOutcome() {
+
+        dots.style.display =
+            "none";
+
+
+        resultText.textContent =
+            outcome;
+
+
+        if (
+            outcome === "УСПЕХ"
+        ) {
+
+            resultText.classList.add(
+                "success"
+            );
+
+        }
+        else if (
+            outcome === "КАТАСТРОФА"
+        ) {
+
+            resultText.classList.add(
+                "catastrophe"
+            );
+
+        }
+
+
+        resultText.classList.add(
+            "visible"
+        );
+
+
+        if (
+            outcome === "ВЫБОР"
+        ) {
+
+            const resource =
+                character.resource.value;
+
+
+            const canChooseSuccess =
+                resource > 0;
+
+
+            const canChooseCatastrophe =
+                resource < 7;
+
+
+            if (
+                !canChooseSuccess
+            ) {
+
+                successChoice
+                    .classList
+                    .add(
+                        "hidden-choice"
+                    );
+
+            }
+
+
+            if (
+                !canChooseCatastrophe
+            ) {
+
+                catastropheChoice
+                    .classList
+                    .add(
+                        "hidden-choice"
+                    );
+
+            }
+
+
+            if (
+                canChooseSuccess ||
+                canChooseCatastrophe
+            ) {
+
+                pendingChoice =
+                    true;
+
+
+                choices.classList.add(
+                    "visible"
+                );
+
+            } else {
+
+                addRollLog(
+                    details.textContent +
+                    " → ВЫБОР (нет вариантов)"
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /*
+       ВЫБОР — без анимации ожидания.
+       УСПЕХ / КАТАСТРОФА — 1 сек. точек.
+    */
+
+    if (
+        outcome === "ВЫБОР"
+    ) {
+
+        showOutcome();
+
+    } else {
+
+        let dotCount = 1;
+
+
+        const dotInterval =
+            setInterval(
+                () => {
+
+                    dotCount++;
+
+
+                    if (
+                        dotCount > 4
+                    ) {
+
+                        dotCount = 1;
+
+                    }
+
+
+                    dots.textContent =
+                        ".".repeat(
+                            dotCount
+                        );
+
+                },
+                200
+            );
+
+
+        setTimeout(
+            () => {
+
+                clearInterval(
+                    dotInterval
+                );
+
+                showOutcome();
+
+            },
+            1000
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ВЫБОР РЕЗУЛЬТАТА
+   ========================================================= */
+
+function chooseResult(
+    choice
+) {
+
+    if (
+        !pendingChoice
+    ) {
+
+        return;
+
+    }
+
+
+    const detailsText =
+        document.getElementById(
+            "resultDetails"
+        ).textContent;
+
+
+    if (
+        choice === "success"
+    ) {
+
+        if (
+            character.resource.value >
+            0
+        ) {
+
+            changeResource(
+                -1,
+                false
+            );
+
+        }
+
+        sendObsMessage("VYB-USP");
+
+        addRollLog(
+            detailsText +
+            " → ВЫБОР → УСПЕХ (−1 ресурс, стало " +
+            character.resource.value +
+            ")"
+        );
+
+    }
+
+
+    else if (
+        choice === "catastrophe"
+    ) {
+
+        if (
+            character.resource.value <
+            7
+        ) {
+
+            changeResource(
+                1,
+                false
+            );
+
+        }
+
+        sendObsMessage("VYB-KAT");
+
+        addRollLog(
+            detailsText +
+            " → ВЫБОР → КАТАСТРОФА (+1 ресурс, стало " +
+            character.resource.value +
+            ")"
+        );
+
+    }
+
+
+    pendingChoice =
+        false;
+
+
+    closeResult();
+
+}
+
+
+/* =========================================================
+   ЗАКРЫТИЕ РЕЗУЛЬТАТА
+   =========================================================
+
+   Затемнение вокруг окна не закрывает его.
+   Закрытие происходит только по кнопке.
+   ========================================================= */
+
+function closeResult() {
+
+    document
+        .getElementById(
+            "result"
+        )
+        .classList
+        .remove(
+            "visible"
+        );
+
+
+    pendingChoice =
+        false;
+
+}
+
+
+/* =========================================================
+   ЭКСПОРТ
+   ========================================================= */
+
+function exportCharacter() {
+
+    const blob =
+        new Blob(
+
+            [
+                JSON.stringify(
+                    character,
+                    null,
+                    2
+                )
+            ],
+
+            {
+                type:
+                    "application/json"
+            }
+
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const a =
+        document.createElement(
+            "a"
+        );
+
+
+    const filename =
+        (
+            character.name ||
+            "character"
+        )
+        .replace(
+            /[\\/:*?"<>|]/g,
+            "_"
+        )
+        +
+        ".json";
+
+
+    a.href =
+        url;
+
+
+    a.download =
+        filename;
+
+
+    a.click();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+/* =========================================================
+   ИМПОРТ
+   ========================================================= */
+
+function importCharacter() {
+
+    document
+        .getElementById(
+            "importFile"
+        )
+        .click();
+
+}
+
+
+document
+    .getElementById(
+        "importFile"
+    )
+    .addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target
+                    .files[0];
+
+
+            if (!file) {
+
+                return;
+
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                () => {
+
+                    try {
+
+                        const imported =
+                            JSON.parse(
+                                reader.result
+                            );
+
+
+                        const importedResource =
+                            imported.resource ||
+                            {};
+
+
+                        let resourceValue =
+                            Number(
+                                importedResource.value
+                            );
+
+
+                        if (
+                            !Number.isFinite(
+                                resourceValue
+                            )
+                        ) {
+
+                            resourceValue = 0;
+
+                        }
+
+
+                        resourceValue =
+                            Math.max(
+                                0,
+                                Math.min(
+                                    7,
+                                    Math.floor(
+                                        resourceValue
+                                    )
+                                )
+                            );
+
+
+                        /*
+                           Поддержка старых файлов
+                           с d6 / d8 / d10.
+                        */
+
+                        let importedSymbols =
+                            Array.isArray(
+                                imported.symbols
+                            )
+                                ? imported.symbols
+                                : [];
+
+
+                        importedSymbols =
+                            importedSymbols.map(
+                                symbol => {
+
+                                    let level =
+                                        symbol.level;
+
+
+                                    if (
+                                        level ===
+                                        undefined
+                                    ) {
+
+                                        if (
+                                            symbol.dice ===
+                                            "d8"
+                                        ) {
+
+                                            level = 1;
+
+                                        }
+                                        else if (
+                                            symbol.dice ===
+                                            "d10"
+                                        ) {
+
+                                            level = 2;
+
+                                        }
+                                        else {
+
+                                            level = 0;
+
+                                        }
+
+                                    }
+
+
+                                    return {
+
+                                        text:
+                                            symbol.text ||
+                                            "",
+
+                                        level:
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    2,
+                                                    Number(
+                                                        level
+                                                    ) || 0
+                                                )
+                                            )
+
+                                    };
+
+                                }
+                            );
+
+
+                        character = {
+
+                            name:
+                                imported.name ||
+                                "",
+
+
+                            textAspects:
+                                Array.isArray(
+                                    imported.textAspects
+                                )
+                                    ? imported.textAspects
+                                    : [],
+
+
+                            circumstances:
+                                Array.isArray(
+                                    imported.circumstances
+                                )
+                                    ? imported.circumstances
+                                    : [],
+
+
+                            symbols:
+                                importedSymbols,
+
+
+                            states:
+                                Array.isArray(
+                                    imported.states
+                                )
+                                    ? imported.states
+                                    : [],
+
+
+                            resource: {
+
+                                name:
+                                    importedResource.name ||
+                                    "Ресурс",
+
+                                value:
+                                    resourceValue
+
+                            },
+
+                            tricks:
+                                Array.isArray(imported.tricks)
+                                    ? imported.tricks.map(t => ({
+                                        title:
+                                            (t && t.title) || "",
+                                        cost:
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    7,
+                                                    Number(t && t.cost) || 0
+                                                )
+                                            ),
+                                        description:
+                                            (t && t.description) || ""
+                                    }))
+                                    : []
+
+                        };
+
+
+                        save();
+
+                        render();
+
+                    }
+                    catch {
+
+                        alert(
+                            "Не удалось загрузить файл персонажа."
+                        );
+
+                    }
+
+
+                    event.target.value =
+                        "";
+
+                };
+
+
+            reader.readAsText(
+                file
+            );
+
+        }
+    );
+
+
+/* =========================================================
+   СБРОС
+   ========================================================= */
+
+function resetCharacter() {
+
+    if (
+        !confirm(
+            "Удалить все данные этого персонажа?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    character =
+        defaultCharacter();
+
+
+    save();
+
+    render();
+
+}
+
+
+/* =========================================================
+   ОБЩИЙ RENDER
+   ========================================================= */
+
+function render() {
+
+    const name =
+        document.getElementById(
+            "name"
+        );
+
+
+    name.value =
+        character.name;
+
+
+    /*
+       Имя можно менять только
+       в режиме редактирования.
+    */
+
+    name.readOnly =
+        !editMode;
+
+
+    renderTextAspects();
+
+    renderCircumstances();
+
+    renderSymbols();
+
+    renderResource();
+
+    renderStates();
+
+
+    const addAspectBtn =
+        document.getElementById(
+            "addAspectBtn"
+        );
+
+
+    const addSymbolBtn =
+        document.getElementById(
+            "addSymbolBtn"
+        );
+
+
+    const stateAddActions =
+        document.getElementById(
+            "stateAddActions"
+        );
+
+
+    addAspectBtn.style.display =
+        editMode
+            ? "block"
+            : "none";
+
+
+    addSymbolBtn.style.display =
+        editMode
+            ? "block"
+            : "none";
+
+
+    stateAddActions.style.display =
+        editMode
+            ? "flex"
+            : "none";
+
+}
+
+
+/* =========================================================
+   WEBSOCKET → OBS (Advanced Scene Switcher)
+
+   Режим: подключиться → отправить сигнал → сразу отключиться.
+   Так на мобильных стабильно, и в списке клиентов OBS
+   не копятся удалённые адреса.
+   ========================================================= */
+
+const WS_URL_KEY = "nri_ws_url_v1";
+const WS_PASSWORD_KEY = "nri_ws_password_v1";
+
+let sendingLock = false;
+
+
+function loadWsUrl() {
+    try {
+        const saved = localStorage.getItem(WS_URL_KEY);
+        if (saved) {
+            document.getElementById("wsUrl").value = saved;
+        } else {
+            document.getElementById("wsUrl").value =
+                "ws://yippee-scouring-clear.ngrok-free.dev";
+        }
+    } catch (e) {
+        document.getElementById("wsUrl").value =
+            "ws://yippee-scouring-clear.ngrok-free.dev";
+    }
+
+    try {
+        const savedPassword = localStorage.getItem(WS_PASSWORD_KEY);
+        if (savedPassword !== null) {
+            document.getElementById("wsPassword").value = savedPassword;
+        }
+    } catch (e) {}
+}
+
+
+function saveWsUrl() {
+    try {
+        const url = document.getElementById("wsUrl").value.trim();
+        localStorage.setItem(WS_URL_KEY, url);
+    } catch (e) {}
+}
+
+
+function saveWsPassword() {
+    try {
+        const password = document.getElementById("wsPassword").value;
+        localStorage.setItem(WS_PASSWORD_KEY, password);
+    } catch (e) {}
+}
+
+
+function openOnlinePanel() {
+    document
+        .getElementById("onlineOverlay")
+        .classList
+        .add("visible");
+}
+
+
+function closeOnlinePanel() {
+    document
+        .getElementById("onlineOverlay")
+        .classList
+        .remove("visible");
+}
+
+
+function setWsStatus(text, type = "") {
+    const el = document.getElementById("wsStatus");
+    el.textContent = text;
+    el.className = "online-status" + (type ? " " + type : "");
+}
+
+
+/**
+ * Одноразовая сессия при каждом броске:
+ * connect → CallVendorRequest → disconnect
+ * Так стабильнее на мобильных, в OBS не копятся клиенты.
+ */
+async function sendObsMessage(message) {
+    if (sendingLock) {
+        return false;
+    }
+
+    const url = document.getElementById("wsUrl").value.trim();
+    const password = document.getElementById("wsPassword").value;
+
+    if (!url) {
+        setWsStatus("Укажи адрес WebSocket в Онлайн", "err");
+        return false;
+    }
+
+    sendingLock = true;
+
+    let socket = null;
+
+    try {
+        setWsStatus("Отправляю " + message + "…");
+
+        socket = new OBSWebSocket();
+        await socket.connect(url, password || undefined);
+
+        await socket.call("CallVendorRequest", {
+            vendorName: "AdvancedSceneSwitcher",
+            requestType: "AdvancedSceneSwitcherMessage",
+            requestData: {
+                message: message
+            }
+        });
+
+        setWsStatus(message + " отправлен ✓", "ok");
+        return true;
+
+    } catch (err) {
+        console.error("Ошибка отправки в OBS:", err);
+        setWsStatus("Ошибка: " + (err.message || err), "err");
+        return false;
+
+    } finally {
+        if (socket) {
+            try {
+                await socket.disconnect();
+            } catch (e) {}
+        }
+        sendingLock = false;
+
+        setTimeout(() => {
+            if (!sendingLock) {
+                setWsStatus("Сигнал уходит при каждом броске");
+            }
+        }, 2000);
+    }
+}
+
+
+function sendRollSignal(outcome) {
+    let signal = null;
+
+    if (outcome === "УСПЕХ") {
+        signal = "USP";
+    } else if (outcome === "КАТАСТРОФА") {
+        signal = "KAT";
+    }
+
+    if (signal) {
+        sendObsMessage(signal);
+    }
+}
+
+
+/* =========================================================
+   ЛОГ СОБЫТИЙ (броски, ресурс, трюки) — до 20, в localStorage
+   ========================================================= */
+
+const LOG_STORAGE_KEY = "nri_event_log_v1";
+const ROLL_LOG_MAX = 20;
+
+let rollLogEntries = loadEventLog();
+let logsVisible = false;
+
+
+function loadEventLog() {
+    try {
+        const raw =
+            localStorage.getItem(
+                LOG_STORAGE_KEY
+            );
+
+        if (!raw) {
+            return [];
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .filter(
+                item =>
+                    typeof item === "string"
+            )
+            .slice(0, ROLL_LOG_MAX);
+
+    } catch (e) {
+        return [];
+    }
+}
+
+
+function saveEventLog() {
+    try {
+        localStorage.setItem(
+            LOG_STORAGE_KEY,
+            JSON.stringify(
+                rollLogEntries
+            )
+        );
+    } catch (e) {}
+}
+
+
+function formatLogTime() {
+    const now = new Date();
+
+    const h =
+        String(now.getHours()).padStart(2, "0");
+
+    const m =
+        String(now.getMinutes()).padStart(2, "0");
+
+    return h + ":" + m;
+}
+
+
+function addRollLog(text) {
+    if (!text) {
+        return;
+    }
+
+    const line =
+        formatLogTime() + "  " + text;
+
+    rollLogEntries.unshift(line);
+
+    if (rollLogEntries.length > ROLL_LOG_MAX) {
+        rollLogEntries.length = ROLL_LOG_MAX;
+    }
+
+    saveEventLog();
+
+    if (logsVisible) {
+        renderRollLog();
+    }
+}
+
+
+function renderRollLog() {
+    const el = document.getElementById("rollLog");
+
+    if (!el) {
+        return;
+    }
+
+    el.innerHTML = "";
+
+    rollLogEntries.forEach(entry => {
+        const row = document.createElement("div");
+        row.className = "roll-log-entry";
+        row.textContent = entry;
+        el.appendChild(row);
+    });
+}
+
+
+function toggleLogs() {
+    logsVisible = !logsVisible;
+
+    const section =
+        document.getElementById(
+            "rollLogSection"
+        );
+
+    const btn =
+        document.getElementById(
+            "logsBtn"
+        );
+
+    if (section) {
+        section.classList.toggle(
+            "visible",
+            logsVisible
+        );
+    }
+
+    if (btn) {
+        btn.classList.toggle(
+            "edit-btn",
+            logsVisible
+        );
+
+        if (logsVisible) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    }
+
+    if (logsVisible) {
+        renderRollLog();
+    }
+}
+
+
+/* =========================================================
+   ГАЛЕРЕЯ (1.jpg … 3.jpg)
+   ========================================================= */
+
+const GALLERY_BASE =
+    "https://raw.githubusercontent.com/mikeoneseven/netgeroev/main/";
+
+const GALLERY_FILES = [
+    "1.jpg",
+    "2.jpg",
+    "3.jpg"
+];
+
+let galleryIndex = 0;
+
+
+function galleryUrl(index) {
+    return (
+        GALLERY_BASE +
+        GALLERY_FILES[index] +
+        "?t=" +
+        Date.now()
+    );
+}
+
+
+function showGalleryImage(index) {
+    const total = GALLERY_FILES.length;
+
+    galleryIndex =
+        ((index % total) + total) % total;
+
+    const img = document.getElementById("galleryImg");
+    const hint = document.getElementById("galleryHint");
+
+    if (img) {
+        img.src = galleryUrl(galleryIndex);
+    }
+
+    if (hint) {
+        hint.textContent =
+            (galleryIndex + 1) + " / " + total;
+    }
+}
+
+
+function setupGallery() {
+    const el = document.getElementById("gallery");
+
+    if (!el) {
+        return;
+    }
+
+    el.addEventListener("click", event => {
+        const rect = el.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+
+        if (x < rect.width / 2) {
+            showGalleryImage(galleryIndex - 1);
+        } else {
+            showGalleryImage(galleryIndex + 1);
+        }
+    });
+
+    showGalleryImage(0);
+}
+
+
+/* =========================================================
+   ЗАПУСК
+   ========================================================= */
+
+loadWsUrl();
+
+document.getElementById("wsUrl").addEventListener("input", () => {
+    saveWsUrl();
+});
+
+document.getElementById("wsPassword").addEventListener("input", () => {
+    saveWsPassword();
+});
+
+setupGallery();
+
+render();
+
+</script>
+
+</body>
+</html>
